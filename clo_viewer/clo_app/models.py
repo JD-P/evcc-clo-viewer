@@ -2,7 +2,6 @@ from django.db import models
 
 class CoreLearningOutcome(models.Model):
     """Represents a CoreLearningOutcome in the class schedule."""
-    label_short = models.CharField(primary_key=True, max_length=25)
     label = models.TextField()
     description = models.TextField()
 
@@ -23,13 +22,13 @@ class Course(models.Model):
     # same value.
     # By the way, it's also possible to have partial credits which is why
     # they're floats. 
-    lower_credit_bound = models.FloatField()
-    upper_credit_bound = models.FloatField()
+    lower_credit_bound = models.FloatField(null=True)
+    upper_credit_bound = models.FloatField(null=True)
     
 class CourseLearningOutcome(models.Model):
     """Represents a CoreLearningOutcome associated with a Course."""
     course = models.ForeignKey(Course, on_delete=models.CASCADE)
-    learning_outcome = models.ForeignKey(CoreLearningOutcome, on_delete=models.CASCADE)
+    learning_outcome = models.ForeignKey(CoreLearningOutcome, on_delete=models.PROTECT)
 
 class DegreeProgram(models.Model):
     """Represents a Degree Program that someone can pursue at EvCC."""
@@ -47,7 +46,8 @@ class DPCourseSpecific(models.Model):
 class DPCourseGeneric(models.Model):
     """Represents one or more generic course credits associated with a 
     Degree Program."""
-    credit_type = models.ForeignKey(CreditType, on_delete=models.CASCADE)
+    degree_program = models.ForeignKey(DegreeProgram, on_delete=models.CASCADE)
+    credit_type = models.ForeignKey(CreditType, on_delete=models.PROTECT)
     credits = models.FloatField(null=True)
     elective = models.BooleanField()
 
@@ -61,6 +61,8 @@ class DPCourseSubstituteSpecific(models.Model):
 class DPCourseSubstituteGeneric(models.Model):
     """Handle the machine-unreadable declarations in the class schedule I was 
     given that specify generic substitutions for courses."""
-    credit_type = models.ForeignKey(CreditType, on_delete=models.CASCADE)
+    parent_course = models.ForeignKey(DPCourseSpecific,
+                                      on_delete=models.CASCADE)
+    credit_type = models.ForeignKey(CreditType, on_delete=models.PROTECT)
     credits = models.FloatField(null=True)
     elective = models.BooleanField()

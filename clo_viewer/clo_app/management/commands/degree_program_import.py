@@ -54,14 +54,27 @@ class Command(BaseCommand):
     def add_arguments(self, parser):
         parser.add_argument("filepath", nargs=1, type=str)
         parser.add_argument("--initialize", action="store_true", dest="init")
+        parser.add_argument("--delete", action="store_true", dest="delete")
         
     def handle(self, *args, **options):
         if options["init"]:
             self.initialize()
             print("Initial objects were created without errors!")
             return "\n" # Django wraps I/O and tries to concat return value as string
-        
-        with open(arguments.degree_programs) as programs_csv:
+        # Elif because init and delete are mutually exclusive
+        elif options["delete"]:
+            wumpus_q = input(
+            "This will PERMANENTLY DELETE all data currently loaded"
+            " in the application, so I just want to be sure you mean it."
+            " Type 'wumpus' in to prove you really read this: ")
+            if wumpus_q.lower() == "wumpus":
+                self.delete_all()
+                print("All gone.")
+            else:
+                print("Nope. Did you include the single quotes? Don't.")
+            return "\n"
+            
+        with open(options["filepath"][0]) as programs_csv:
             degree_programs = csv.reader(programs_csv)
             next(degree_programs)
             ATA_line = next(degree_programs)
@@ -69,47 +82,78 @@ class Command(BaseCommand):
                 raise Exception("Second line of .csv was not expected ATA line!")
             degree_program_rows = []
             while ATA_line:
-                program_rows, new_ATA_line = dp_rows(degree_programs, ATA_line)
+                program_rows, new_ATA_line = self.dp_rows(degree_programs, ATA_line)
                 program_rows.insert(0, ATA_line)
                 degree_program_rows.append(program_rows)
                 ATA_line = new_ATA_line
-            dp_dicts = []
             # On the first pass we construct Degree Programs and Courses
             # This requires an initialization pass to have already been run
-            # TODO: Add code checking for the initialization pass and raise error
-            # if not present.
+            # TODO: Add code checking for the initialization pass and
+            # raise error if not present.
+            try:
+                models.CoreLearningOutcome.objects.get(id=1)
+            except models.CoreLearningOutcome.DoesNotExist:
+                print("You need to run the initialization pass first with"
+                      " --initialize")
+                return "\n"
+                
+            dp_objects = []
+            course_objects = []
+            clo_objects = []
             for dp_rowset in degree_program_rows:
-                # First we make the Degree Program
-                program = {}
-                program["label"] = dp_rowset[0][0]
-                program["credits"] = dp_rowset[0][1]
-                program["elective_credits"] = dp_rowset[0][2]
-                dp_dicts.append(program)
-            # On the second pass we construct Degree Program and Course Relationships
+                # Check for "N.A." and correct it to null if found
+                try:
+                    float(dp_rowset[0][1])
+                except ValueError:
+                    dp_rowset[0][1] = None
+                try:
+                    float(dp_rowset[0][2])
+                except ValueError:
+                    dp_rowset[0][2] = None
+                dp = models.DegreeProgram(label=dp_rowset[0][0],
+                                          credits=dp_rowset[0][1],
+                                          elective_credits=dp_rowset[0][2])
+                dp_objects.append(dp)
+                course_object_set, clo_set = self.build_courses_from_rows(dp_rowset)
+                course_objects += course_object_set
+                clo_objects += clo_set
 
+            # Since we reference objects created previously in pass two
+            # we have to save the ones made in the first pass.
+
+            [dp.save() for dp in dp_objects]
+            [course.save() for course in course_objects]
+            [clo.save() for clo in clo_objects]
+            print("Degree Programs, Courses and Course Learning Outcomes saved!")
+            # On the second pass we construct Degree Program and Course
+            # Relationships
+            for dp_rowset in degree_program_rows:
+                continue
+
+            
     def initialize(self):
         """Run an initialization pass if the user requests it. This is necessary
         before we can construct the other objects in the system."""
         # Construct Core Learning Outcomes
-        clo_1 = models.CoreLearningOutcome(label_short="one",
+        clo_1 = models.CoreLearningOutcome(
                                            label="Engage and take responsibility as active learners",
                                            description="Students will be involved in the learning process as they gain deeper levels of understanding of the subject matter. They will design, complete and analyze projects while developing group interaction and leadership skills.")
-        clo_2 = models.CoreLearningOutcome(label_short="two",
+        clo_2 = models.CoreLearningOutcome(
                                            label="Think critically",
                                            description="Students will develop and practice analytical skills, problem-solving skills and quantitative reasoning skills. Using creativity and self-reflection, they will be able to engage in inquiry that produces well-reasoned, meaningful conclusions.")
-        clo_3 = models.CoreLearningOutcome(label_short="three",
+        clo_3 = models.CoreLearningOutcome(
                                            label="Communicate effectively",
                                            description="Students will develop the organizational and research skills necessary to write and speak effectively. The students will demonstrate awareness of different audiences, styles, and approaches to oral and written communication.")
-        clo_4 = models.CoreLearningOutcome(label_short="four",
+        clo_4 = models.CoreLearningOutcome(
                                            label="Participate in diverse environments",
                                            description="Students will gain the awareness of and sensitivity to diversity, including one’s own place as a global citizen. Students attain knowledge and understanding of the multiple expressions of diversity, and the skills to recognize, analyze and evaluate diverse issues and perspectives.")
-        clo_5 = models.CoreLearningOutcome(label_short="five",
+        clo_5 = models.CoreLearningOutcome(
                                            label="Utilize information literacy skills",
                                            description="Students will develop and employ skills to recognize when information is needed and to locate, evaluate, effectively use and communicate information in its various forms.")
-        clo_6 = models.CoreLearningOutcome(label_short="six",
+        clo_6 = models.CoreLearningOutcome(
                                            label="Demonstrate computer and technology proficiency",
                                            description="Students will use computers and technology as appropriate in their course of study.")
-        clo_7 = models.CoreLearningOutcome(label_short="seven",
+        clo_7 = models.CoreLearningOutcome(
                                            label="Identify elements of a sustainable society",
                                            description="Students will integrate and apply economic, ecological, and eco-justice concepts into a systems-thinking framework.")
         clo_1.save()
@@ -149,6 +193,19 @@ class Command(BaseCommand):
         E.save()
         DC.save()
 
+    def delete_all(self):
+        """Delete every object in the database. This is so you can reseed it.
+        Mostly just for debugging."""
+        models.CoreLearningOutcome.objects.all().delete()
+        models.CreditType.objects.all().delete()
+        models.Course.objects.all().delete()
+        models.CourseLearningOutcome.objects.all().delete()
+        models.DegreeProgram.objects.all().delete()
+        models.DPCourseSpecific.objects.all().delete()
+        models.DPCourseGeneric.objects.all().delete()
+        models.DPCourseSubstituteSpecific.objects.all().delete()
+        models.DPCourseSubstituteGeneric.objects.all().delete()
+        
     def dp_rows(self, csv_reader, ATA_line):
         """Extract the rows corresponding to a particular degree program and return 
         them.
@@ -169,4 +226,46 @@ class Command(BaseCommand):
         # This exit point occurs when we run out of rows to read
         return (rows, None)
 
-        
+    def build_courses_from_rows(self, rowset):
+        """Take a set of rows from the .csv, and construct course objects from 
+        them. Next we construct CourseLearningOutcomes. Then return both."""
+        class_id_re = re.compile("[A-Z]+&* [0-9]+")
+        courses = []
+        course_learning_outcomes = []
+        for row in rowset:
+            if not class_id_re.fullmatch(row[0].strip()):
+                continue
+            # If credit is numeric assign it to lower and upper credit bound
+            # Otherwise, split the credit range and assign
+            try:
+                lowercb = float(row[2])
+                uppercb = float(row[2])
+            except ValueError:
+                if "-" in row[2]:
+                    bounds = row[2].split("-")
+                    lowercb = float(bounds[0])
+                    uppercb = float(bounds[1])
+                else:
+                    lowercb = None
+                    uppercb = None
+                    
+            course = models.Course(id=row[0].strip(),
+                                   label=row[1].strip(" or"),
+                                   lower_credit_bound=lowercb,
+                                   upper_credit_bound=uppercb)
+            courses.append(course)
+
+            outcome_string = row[3]
+            clo_content = re.findall("[0-9]+", outcome_string)
+            for outcome in clo_content:
+                core_learning_outcome = models.CoreLearningOutcome.objects.get(
+                    id=int(
+                        outcome))
+                course_learning_outcome = models.CourseLearningOutcome(
+                    course=course,
+                    learning_outcome=core_learning_outcome)
+                course_learning_outcomes.append(course_learning_outcome)
+                
+        return (courses, course_learning_outcomes)
+         
+            
