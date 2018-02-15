@@ -46,7 +46,6 @@ import re
 import csv
 from django.core.management.base import BaseCommand, CommandError
 from clo_app import models
-from argparse import ArgumentParser
 
 class Command(BaseCommand):
     help = "Import JD's manually cleaned .csv of the degree programs and their CLO."
@@ -93,9 +92,8 @@ class Command(BaseCommand):
             try:
                 models.CoreLearningOutcome.objects.get(id=1)
             except models.CoreLearningOutcome.DoesNotExist:
-                print("You need to run the initialization pass first with"
-                      " --initialize")
-                return "\n"
+                raise ValueError("You need to run the initialization pass first with"
+                                 " --initialize")
                 
             dp_objects = []
             course_objects = []
@@ -125,11 +123,109 @@ class Command(BaseCommand):
             [course.save() for course in course_objects]
             [clo.save() for clo in clo_objects]
             print("Degree Programs, Courses and Course Learning Outcomes saved!")
-            # On the second pass we construct Degree Program and Course
-            # Relationships
-            for dp_rowset in degree_program_rows:
-                continue
 
+            self.pass_two(degree_program_rows)
+            print("Course relationships saved!")
+            print("Data imported.")
+            
+    def pass_two(self, degree_program_rows):
+        """On the second pass we construct Degree Program and Course
+        Relationships."""
+        class_id_re = re.compile("[A-Z]+&* [0-9]+")
+        for dp_rowset in enumerate(degree_program_rows):
+            degree_program = models.DegreeProgram.objects.get(label=dp_rowset[1][0][0])
+            last_parent = (dp_rowset[0], 1)
+            # Check to make sure first course in program isn't generic
+            # If it is, change it
+            if dp_rowset[1][1][0].startswith("Generic"):
+                for course_row in enumerate(dp_rowset[1]):
+                    if course_row[1][0].startswith("ATA"):
+                        continue
+                    elif not course_row[1][0].startswith("Generic"):
+                        last_parent = (dp_rowset[0], course_row[0])
+                        break
+                    
+            substitute = False
+            for row in enumerate(dp_rowset[1]):
+                if not class_id_re.fullmatch(row[1][0].strip()):
+                    continue
+                course_id = row[1][0]
+                course_title = row[1][1]
+                course_credits = row[1][2]
+                
+                course = models.Course.objects.get(id=course_id)
+                # Set flags on elective, substitute, and generic
+                elective = bool(row[1][-1])
+                generic = course_id.startswith("Generic")
+                # Get parent course
+                parent = degree_program_rows[last_parent[0]][last_parent[1]]
+                parent_course = models.Course.objects.get(id=parent[0])
+                if not substitute and not generic:
+                    dpcs = models.DPCourseSpecific(
+                        degree_program=degree_program,
+                        course=course,
+                        elective=elective)
+                    dpcs.save()
+                    last_parent = (dp_rowset[0], row[0])
+                elif generic and not substitute:
+                    credit_type = self.extract_generic_credit_type(row[1])
+                    dpcg = models.DPCourseGeneric(
+                        degree_program=degree_program,
+                        credit_type=credit_type,
+                        credits=course_credits,
+                        elective=elective)
+                    dpcg.save()
+                    # Omission of last parent update purposeful
+                    # as a hack because I don't think this
+                    # situation ever actually occurs in the data
+                    #TODO: Do this correctly.
+                elif substitute and not generic:
+                    dp_parent_course = models.DPCourseSpecific.objects.get(
+                        degree_program=degree_program,
+                        course=parent_course)
+                    dpcss = models.DPCourseSubstituteSpecific(
+                        parent_course=dp_parent_course,
+                        course=course)
+                    dpcss.save()
+                elif substitute and generic:
+                    dp_parent_course = models.DPCourseSpecific.objects.get(
+                        degree_program=degree_program,
+                        course=parent_course)
+                    credit_type = self.extract_generic_credit_type(row[1])
+                    dpcsg = models.DPCourseSubstituteGeneric(
+                        parent_course=dp_parent_course,
+                        credit_type=credit_type,
+                        credits=course_credits,
+                        elective=elective)
+                    dpcsg.save()
+                else:
+                    raise ValueError("Improper combination of flags!")
+                substitute = course_title.strip().endswith("or")
+
+                
+        return True
+
+                
+                                                           
+
+    def extract_generic_credit_type(self, course_row):
+        """Given a course row, extract and return its generic credit type."""
+        course_id = row[0]
+        credit_type_res = {re.compile("Communication"):"CS",
+                           re.compile("Natural Science"):"NS",
+                           re.compile("Humanities"):"H",
+                           re.compile("Performance"):"HP",
+                           re.compile("Social"):"SS",
+                           re.compile("Lab"):"NSL",
+                           re.compile("Quant"):"QS",
+                           re.compile("Elective"):"E",
+                           re.compile("Diversity"):"DC",
+                           re.compile("Prereq"):"PR"}
+        for credit_type_re in credit_type_res:
+            if credit_type_re.search(course_id):
+                type_string = credit_type_res[credit_type_re]
+                credit_type = models.CreditType.objects.get(label_short=type_string)
+                return credit_type
             
     def initialize(self):
         """Run an initialization pass if the user requests it. This is necessary
@@ -137,25 +233,59 @@ class Command(BaseCommand):
         # Construct Core Learning Outcomes
         clo_1 = models.CoreLearningOutcome(
                                            label="Engage and take responsibility as active learners",
-                                           description="Students will be involved in the learning process as they gain deeper levels of understanding of the subject matter. They will design, complete and analyze projects while developing group interaction and leadership skills.")
+                                           description=(
+                                               "Students will be involved in the" 
+                                               " learning process as they gain deeper" 
+                                               " levels of understanding of the subject" 
+                                               " matter. They will design, complete and"
+                                               " analyze projects while developing group" 
+                                               " interaction and leadership skills."))
         clo_2 = models.CoreLearningOutcome(
                                            label="Think critically",
-                                           description="Students will develop and practice analytical skills, problem-solving skills and quantitative reasoning skills. Using creativity and self-reflection, they will be able to engage in inquiry that produces well-reasoned, meaningful conclusions.")
+                                           description=(
+                                               "Students will develop and" 
+                                               " practice analytical skills, problem-solving" 
+                                               " skills and quantitative reasoning skills." 
+                                               " Using creativity and self-reflection," 
+                                               " they will be able to engage in inquiry" 
+                                               " that produces well-reasoned, meaningful" 
+                                               " conclusions."))
         clo_3 = models.CoreLearningOutcome(
                                            label="Communicate effectively",
-                                           description="Students will develop the organizational and research skills necessary to write and speak effectively. The students will demonstrate awareness of different audiences, styles, and approaches to oral and written communication.")
+                                           description=(
+                                               "Students will develop the organizational" 
+                                               " and research skills necessary to write" 
+                                               " and speak effectively. The students will" 
+                                               " demonstrate awareness of different" 
+                                               " audiences, styles, and approaches to" 
+                                               " oral and written communication."))
         clo_4 = models.CoreLearningOutcome(
                                            label="Participate in diverse environments",
-                                           description="Students will gain the awareness of and sensitivity to diversity, including one’s own place as a global citizen. Students attain knowledge and understanding of the multiple expressions of diversity, and the skills to recognize, analyze and evaluate diverse issues and perspectives.")
+                                           description=(
+                                               "Students will gain the awareness of" 
+                                               " and sensitivity to diversity, including" 
+                                               " one’s own place as a global citizen." 
+                                               " Students attain knowledge and understanding" 
+                                               " of the multiple expressions of diversity," 
+                                               " and the skills to recognize, analyze" 
+                                               " and evaluate diverse issues and perspectives."))
         clo_5 = models.CoreLearningOutcome(
                                            label="Utilize information literacy skills",
-                                           description="Students will develop and employ skills to recognize when information is needed and to locate, evaluate, effectively use and communicate information in its various forms.")
+                                           description=(
+                                               "Students will develop and employ" 
+                                               " skills to recognize when information" 
+                                               " is needed and to locate, evaluate," 
+                                               " effectively use and communicate" 
+                                               " information in its various forms."))
         clo_6 = models.CoreLearningOutcome(
                                            label="Demonstrate computer and technology proficiency",
-                                           description="Students will use computers and technology as appropriate in their course of study.")
+                                           description=("Students will use computers and" 
+                                           " technology as appropriate in their course of study."))
         clo_7 = models.CoreLearningOutcome(
                                            label="Identify elements of a sustainable society",
-                                           description="Students will integrate and apply economic, ecological, and eco-justice concepts into a systems-thinking framework.")
+                                           description=("Students will integrate and" 
+                                           " apply economic, ecological, and eco-justice" 
+                                           " concepts into a systems-thinking framework."))
         clo_1.save()
         clo_2.save()
         clo_3.save()
@@ -183,6 +313,8 @@ class Command(BaseCommand):
                               label="Elective")
         DC = models.CreditType(label_short="DC",
                                label="Diversity Course")
+        PR = models.CreditType(label_short="PR",
+                               label="Generic Prerequisite")
         CS.save()
         NS.save()
         H.save()
@@ -192,14 +324,15 @@ class Command(BaseCommand):
         QS.save()
         E.save()
         DC.save()
+        PR.save()
 
     def delete_all(self):
         """Delete every object in the database. This is so you can reseed it.
         Mostly just for debugging."""
-        models.CoreLearningOutcome.objects.all().delete()
-        models.CreditType.objects.all().delete()
-        models.Course.objects.all().delete()
         models.CourseLearningOutcome.objects.all().delete()
+        #models.CoreLearningOutcome.objects.all().delete()
+        #models.CreditType.objects.all().delete()
+        models.Course.objects.all().delete()
         models.DegreeProgram.objects.all().delete()
         models.DPCourseSpecific.objects.all().delete()
         models.DPCourseGeneric.objects.all().delete()
