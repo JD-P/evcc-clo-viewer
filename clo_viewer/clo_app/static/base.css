@@ -1,0 +1,34 @@
+body {
+    font-size: 1.3em;
+}
+
+caption {
+    font-size: 1.3em;
+}
+
+th {
+    font-size: 1.3em;
+}
+
+td {
+    font-size: 1.3em;
+}
+
+#banner_navigation {
+    font-size: 2em;
+    font-family: sans-serif;
+    width: 100%;
+    text-align: center;
+    background-color: #b00;
+}
+
+#banner_navigation a {
+    margin-left: 0.5em;
+    color: white;
+    text-decoration: none;
+}
+
+#banner_navigation a:hover {
+    color: black;
+}
+			 
