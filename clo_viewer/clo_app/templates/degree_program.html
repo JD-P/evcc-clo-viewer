@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block css %}<link rel="stylesheet" href="{% static 'degree_program.css' %}"/>{% endblock %}
+
+{% block title %}Compare Degree Program Distance At EvCC{% endblock %}
+
+{% block content %}
+
+<div id="course_overview">
+<h1>{{ reference_program.label }}</h1>
+<p class="credit_hours">Credits: {{ reference_program.credits }}</p>
+</div>
+
+
+<div id="dp_comp" class="collapse_table">
+<a href="#dp_comp" class="arrow">↷</a>
+
+<table class="comparison_table">
+  <caption><b>{{ reference_program.label }}'s Curriculum Similarity To Other Degrees</b></caption>
+  <thead>
+  <th>Program Name</th>
+  <th>Curriculum Similarity</th>
+  </thead>
+  <tbody>
+  {% for program_distance in program_distances reversed %}
+  <tr class="{% cycle 'white_row' 'gray_row' %}">
+    <td>{{ program_distance.0.label }}</td>
+    <td>{{ program_distance.1 }}%</td>
+  </tr>
+  {% endfor %}
+  </tbody>
+</table>
+</div>
+{% endblock %}

@@ -1,0 +1,20 @@
+{% load static %}
+
+<html>
+  <head>
+    <meta charset="UTF-8">
+    <title>{% block title %} EvCC Core Learning Outcome & Degree Program Viewer{% endblock %}</title>
+    <link rel="stylesheet" href="{% static "base.css" %}"> 
+    {% block css %} {% endblock %}
+  </head>
+  <body>
+    <div id="banner_navigation">
+      <a href="">Home</a>
+      <a href="">Foo</a>
+      <a href="">Bar</a>
+      <a href="">About</a>
+    </div>
+    {% block content %} {% endblock %}
+  </body>
+</html>
+
