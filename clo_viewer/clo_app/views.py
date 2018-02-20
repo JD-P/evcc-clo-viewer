@@ -6,13 +6,26 @@ from . import models
 
 # Create your views here.
 
-def degree_program(request):
+def home(request):
+    """Display the home page."""
+    return render(request,
+                  'home.html')
+
+def programs(request):
+    """Display a list of degree programs at EvCC and their associated 
+    information page links."""
+    programs = models.DegreeProgram.objects.all()
+    return render(request,
+                  'programs.html',
+                  {"programs":programs})
+
+def degree_program(request, pid):
     """Given a degree program, show the following information:
 
     - Program name, number of credit hours, later a description if one is available
     - What courses are involved in this degree and their core learning outcomes
     - A comparison of the curriculum similarity this degree program has to every other degree program"""
-    ref_degree_program_id = 80 # Hardcoded during testing, but will be from form
+    ref_degree_program_id = pid
     rdp_object = models.DegreeProgram.objects.get(id=ref_degree_program_id)
     program_distances = []
     for degree_program in models.DegreeProgram.objects.exclude(

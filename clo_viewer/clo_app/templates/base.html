@@ -9,10 +9,13 @@
   </head>
   <body>
     <div id="banner_navigation">
-      <a href="">Home</a>
-      <a href="">Foo</a>
-      <a href="">Bar</a>
-      <a href="">About</a>
+      <p><a href="{% url 'home' %}">Home</a></p>
+      <p class="sep_dot">·</p>
+      <p><a href="{% url 'programs' %}">Programs</a></p>
+      <p class="sep_dot">·</p>
+      <p><a href="">Outcomes</a></p>
+      <p class="sep_dot">·</p>
+      <p><a href="">About</a></p>
     </div>
     {% block content %} {% endblock %}
   </body>

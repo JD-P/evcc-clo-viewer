@@ -1,0 +1,11 @@
+{% extends 'base.html' %}
+
+{% block content %}
+
+{% for degree_program in programs %}
+
+<p><a href="{% url 'degree-program' degree_program.id %}">{{ degree_program.label }}</a></p>
+
+{% endfor %}
+
+{% endblock %}
