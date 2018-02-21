@@ -15,6 +15,28 @@ td {
     width: 550px;
 }
 
+#dp_courses thead {
+    width: 50%;
+    transition:all 1s ease;
+    visibility: hidden;
+}
+
+
+#dp_courses:target thead {
+    visibility: visible;
+}
+
+#dp_courses tbody {
+    width: 50%;
+    transition:all 1s ease;
+    visibility: hidden;
+}
+
+
+#dp_courses:target tbody {
+    visibility: visible;
+}
+
 #dp_comp thead {
     width: 50%;
     transition:all 1s ease;
@@ -36,6 +58,8 @@ td {
 #dp_comp:target tbody {
     visibility: visible;
 }
+
+
 
 
 .arrow {

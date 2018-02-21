@@ -27,6 +27,11 @@ def degree_program(request, pid):
     - A comparison of the curriculum similarity this degree program has to every other degree program"""
     ref_degree_program_id = pid
     rdp_object = models.DegreeProgram.objects.get(id=ref_degree_program_id)
+    # Get courses in program
+    courses = models.DPCourseSpecific.objects.filter(degree_program=ref_degree_program_id)
+    learning_outcomes = models.CourseLearningOutcome.objects.filter(
+        course__dpcoursespecific__id=ref_degree_program_id)
+    
     program_distances = []
     for degree_program in models.DegreeProgram.objects.exclude(
             id=ref_degree_program_id):
