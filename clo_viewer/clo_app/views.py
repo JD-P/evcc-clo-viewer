@@ -79,4 +79,22 @@ def clo(request, clo_id):
     - How many total classes use this core learning outcome.
     - What classes in specific use this core learning outcome.
     - Degree Programs sorted by which ones use this core learning outcome most to least."""
-    return HttpResponse("Placeholder.")
+    clo = models.CoreLearningOutcome.objects.get(id=clo_id)
+    courses = models.Course.objects.filter(courselearningoutcome__learning_outcome=clo)
+    clo_total = courses.count()
+    total_classes = models.Course.objects.all().count()
+    programs = models.DegreeProgram.objects.all()
+    program_pairs = []
+    for program in programs:
+        times_used = models.DPCourseSpecific.objects.filter(
+            degree_program=program).filter(
+                course__courselearningoutcome__learning_outcome=clo).count()
+        program_pairs.append((program, times_used))
+    program_pairs.sort(key=lambda pair: pair[1])
+    return render(request,
+                  'clo.html',
+                  {"clo":clo,
+                   "clo_total":clo_total,
+                   "total_classes":total_classes,
+                   "clo_courses":courses,
+                   "program_pairs":reversed(program_pairs)})

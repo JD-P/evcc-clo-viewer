@@ -1,0 +1,52 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block css %}<link rel="stylesheet" href="{% static 'clo.css' %}"/>{% endblock %}
+
+{% block title %}View Learning Outcome "{{ clo.label }}" at EvCC{% endblock %}
+
+{% block content %}
+
+<h1>{{ clo.label }}</h1>
+<p class="clo_overview" id="clo_total">Used in {{ clo_total }} / {{ total_classes }} classes</p>
+<p class="clo_overview" id="clo_description">{{ clo.description }}</p>
+
+<h2>Course Information</h2>
+<hr/>
+
+<table id="clo_courses">
+  <caption><b>Courses Which Provide "{{ clo.label }}"</b></caption>
+  <thead>
+    <th>Course ID</th>
+    <th>Course Name</th>
+    <th>Credits</th>
+  </thead>
+  <tbody>
+    {% for course in clo_courses %}
+    <tr class="{% cycle 'white_row' 'gray_row' %}">
+      <td>{{ course.id }} </td>
+      <td>{{ course.label }}</td>
+      <td>{{ course.lower_credit_bound }}</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+
+<table id="clo_use_by_degree">
+  <caption><b>Degree Programs By Use Of "{{ clo.label }}"</b></caption>
+  <thead>
+    <th>Program Name</th>
+    <th># Of Classes Used</th>
+  </thead>
+  <tbody>
+    {% for program_pair in program_pairs %}
+    <tr class="{% cycle 'white_row' 'gray_row' %}">
+      <td>{{ program_pair.0.label }}</td>
+      <td>{{ program_pair.1 | floatformat }}</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+
+
+{% endblock %}
