@@ -121,7 +121,6 @@ class Command(BaseCommand):
 
             [dp.save() for dp in dp_objects]
             [course.save() for course in course_objects]
-            [clo.save() for clo in clo_objects]
             print("Degree Programs, Courses and Course Learning Outcomes saved!")
 
             self.pass_two(degree_program_rows)
@@ -386,7 +385,7 @@ class Command(BaseCommand):
                                    label=row[1].strip(" or"),
                                    lower_credit_bound=lowercb,
                                    upper_credit_bound=uppercb)
-            courses.append(course)
+            course.save()
 
             outcome_string = row[3]
             clo_content = re.findall("[0-9]+", outcome_string)
@@ -394,10 +393,16 @@ class Command(BaseCommand):
                 core_learning_outcome = models.CoreLearningOutcome.objects.get(
                     id=int(
                         outcome))
-                course_learning_outcome = models.CourseLearningOutcome(
-                    course=course,
-                    learning_outcome=core_learning_outcome)
-                course_learning_outcomes.append(course_learning_outcome)
+                try:
+                    models.CourseLearningOutcome.objects.get(
+                        course=course,
+                        learning_outcome=core_learning_outcome)
+                    break
+                except models.CourseLearningOutcome.DoesNotExist:
+                    course_learning_outcome = models.CourseLearningOutcome(
+                        course=course,
+                        learning_outcome=core_learning_outcome)
+                    course_learning_outcome.save()
                 
         return (courses, course_learning_outcomes)
          
