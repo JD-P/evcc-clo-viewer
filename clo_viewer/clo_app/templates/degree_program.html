@@ -3,7 +3,7 @@
 
 {% block css %}<link rel="stylesheet" href="{% static 'degree_program.css' %}"/>{% endblock %}
 
-{% block title %}Compare Degree Program Distance At EvCC{% endblock %}
+{% block title %}View Degree Program Information At EvCC{% endblock %}
 
 {% block content %}
 
@@ -16,8 +16,6 @@
 <hr/>
 
 <div id="dp_courses" class="collapse_table">
-
-<a href="#dp_courses" class="arrow">↷</a>
   
 <table class="comparison_table">
   <caption><b>{{ reference_program.label }}'s Courses</b></caption>
@@ -39,6 +37,13 @@
       <td>{{ course_clo_pair.0.id }} </td>
       <td>{{ course_clo_pair.0.label }}</td>
       <td>{{ course_clo_pair.0.lower_credit_bound }}</td>
+      {% for outcome in course_clo_pair.1 %}
+      {% if outcome %}
+      <td>X</td>
+      {% else %}
+      <td></td>
+      {% endif %}
+      {% endfor %}
     </tr>
     {% endfor %}
   </tbody>
@@ -47,7 +52,6 @@
 </div>
 
 <div id="dp_comp" class="collapse_table">
-<a href="#dp_comp" class="arrow">↷</a>
 
 <table class="comparison_table">
   <caption><b>{{ reference_program.label }}'s Curriculum Similarity To Other Degrees</b></caption>
@@ -59,7 +63,7 @@
   {% for program_distance in program_distances reversed %}
   <tr class="{% cycle 'white_row' 'gray_row' %}">
     <td>{{ program_distance.0.label }}</td>
-    <td>{{ program_distance.1 }}%</td>
+    <td>{{ program_distance.1 | floatformat}}%</td>
   </tr>
   {% endfor %}
   </tbody>

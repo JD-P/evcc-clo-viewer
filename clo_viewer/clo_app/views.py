@@ -11,6 +11,11 @@ def home(request):
     return render(request,
                   'home.html')
 
+def about(request):
+    """Provide more information about the reason for the programs existence and 
+    who wrote it."""
+    return HttpResponse("Placeholder")
+
 def programs(request):
     """Display a list of degree programs at EvCC and their associated 
     information page links."""
@@ -30,8 +35,15 @@ def degree_program(request, pid):
     # Get courses in program
     courses = models.Course.objects.filter(
         dpcoursespecific__degree_program=ref_degree_program_id)
-    course_clo_pairs = [(course, course.courselearningoutcome_set.all())
-                        for course in courses]
+    course_clo_pairs = []
+    for course in courses:
+        course_outcomes = [False] * models.CoreLearningOutcome.objects.all().count()
+        clo_raw = models.CoreLearningOutcome.objects.filter(
+            courselearningoutcome__course=course).order_by("id")
+        for outcome_placeholder in enumerate(course_outcomes):
+            if clo_raw.filter(id=outcome_placeholder[0]).exists():
+                course_outcomes[outcome_placeholder[0]] = True
+        course_clo_pairs.append((course, course_outcomes))
     # Get program distances
     program_distances = []
     for degree_program in models.DegreeProgram.objects.exclude(
@@ -52,3 +64,19 @@ def degree_program(request, pid):
                   {"reference_program":rdp_object,
                    "course_clo_pairs":course_clo_pairs,
                    "program_distances":program_distances})
+
+def outcomes(request):
+    """Return a list of core learning outcomes and links to their associated pages."""
+    outcomes = models.CoreLearningOutcome.objects.all()
+    return render(request,
+                  'outcomes.html',
+                  {"outcomes":outcomes})
+
+def clo(request, clo_id):
+    """Given a core learning outcome, show the following information:
+
+    - Label, description.
+    - How many total classes use this core learning outcome.
+    - What classes in specific use this core learning outcome.
+    - Degree Programs sorted by which ones use this core learning outcome most to least."""
+    return HttpResponse("Placeholder.")

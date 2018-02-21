@@ -10,74 +10,8 @@ td {
 .collapse_table {
     display: flex;
     flex-direction: row;
-    margin-left: auto;
-    margin-right: auto;
-    width: 550px;
-}
-
-#dp_courses thead {
-    width: 50%;
-    transition:all 1s ease;
-    display: none;
-}
-
-
-#dp_courses:target thead {
-    display: initial;
-}
-
-#dp_courses tbody {
-    width: 50%;
-    transition:all 1s ease;
-    display: none;
-}
-
-
-#dp_courses:target tbody {
-    display: initial;
-}
-
-#dp_comp thead {
-    width: 50%;
-    transition:all 1s ease;
-    display: none;
-}
-
-
-#dp_comp:target thead {
-    display: initial;
-}
-
-#dp_comp tbody {
-    width: 50%;
-    transition:all 1s ease;
-    display: none;
-}
-
-
-#dp_comp:target tbody {
-    display: initial;
-}
-
-
-
-
-.arrow {
-    font-size: 2em;
-    padding: 2px;
-    text-decoration: none;
-    color: black;
-    border: black 2px solid;
-    background-color: #b00;
-    height: 1em;
-}
-
-.arrow:hover {
-    color: white;
-}
-
-#dp_comp:target .arrow {
-    color: white;
+    justify-content: center;
+    margin-bottom: 2em;
 }
 
 .gray_row {

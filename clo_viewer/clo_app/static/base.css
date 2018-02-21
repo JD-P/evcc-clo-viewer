@@ -15,13 +15,14 @@ td {
 }
 
 #banner_navigation {
+    display: flex;
+    flex-direction: row;
+    justify-content: center;
     font-size: 2em;
     font-family: sans-serif;
     width: 100%;
-    text-align: center;
     background-color: #b00;
-    display: flex;
-    flex-direction: row;
+
 }
 
 #banner_navigation a {
