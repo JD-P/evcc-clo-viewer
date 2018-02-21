@@ -28,10 +28,11 @@ def degree_program(request, pid):
     ref_degree_program_id = pid
     rdp_object = models.DegreeProgram.objects.get(id=ref_degree_program_id)
     # Get courses in program
-    courses = models.DPCourseSpecific.objects.filter(degree_program=ref_degree_program_id)
-    learning_outcomes = models.CourseLearningOutcome.objects.filter(
-        course__dpcoursespecific__id=ref_degree_program_id)
-    
+    courses = models.Course.objects.filter(
+        dpcoursespecific__degree_program=ref_degree_program_id)
+    course_clo_pairs = [(course, course.courselearningoutcome_set.all())
+                        for course in courses]
+    # Get program distances
     program_distances = []
     for degree_program in models.DegreeProgram.objects.exclude(
             id=ref_degree_program_id):
@@ -49,4 +50,5 @@ def degree_program(request, pid):
     return render(request,
                   'degree_program.html',
                   {"reference_program":rdp_object,
+                   "course_clo_pairs":course_clo_pairs,
                    "program_distances":program_distances})

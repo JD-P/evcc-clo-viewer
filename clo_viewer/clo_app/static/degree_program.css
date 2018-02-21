@@ -18,45 +18,45 @@ td {
 #dp_courses thead {
     width: 50%;
     transition:all 1s ease;
-    visibility: hidden;
+    display: none;
 }
 
 
 #dp_courses:target thead {
-    visibility: visible;
+    display: initial;
 }
 
 #dp_courses tbody {
     width: 50%;
     transition:all 1s ease;
-    visibility: hidden;
+    display: none;
 }
 
 
 #dp_courses:target tbody {
-    visibility: visible;
+    display: initial;
 }
 
 #dp_comp thead {
     width: 50%;
     transition:all 1s ease;
-    visibility: hidden;
+    display: none;
 }
 
 
 #dp_comp:target thead {
-    visibility: visible;
+    display: initial;
 }
 
 #dp_comp tbody {
     width: 50%;
     transition:all 1s ease;
-    visibility: hidden;
+    display: none;
 }
 
 
 #dp_comp:target tbody {
-    visibility: visible;
+    display: initial;
 }
 
 

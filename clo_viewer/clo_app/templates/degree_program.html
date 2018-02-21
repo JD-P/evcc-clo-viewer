@@ -12,6 +12,9 @@
 <p class="credit_hours">Credits: {{ reference_program.credits }}</p>
 </div>
 
+<h2>Curriculum Information</h2>
+<hr/>
+
 <div id="dp_courses" class="collapse_table">
 
 <a href="#dp_courses" class="arrow">↷</a>
@@ -31,6 +34,13 @@
     <th>CLO 7</th>
   </thead>
   <tbody>
+    {% for course_clo_pair in course_clo_pairs %}
+    <tr class="{% cycle 'white_row' 'gray_row' %}">
+      <td>{{ course_clo_pair.0.id }} </td>
+      <td>{{ course_clo_pair.0.label }}</td>
+      <td>{{ course_clo_pair.0.lower_credit_bound }}</td>
+    </tr>
+    {% endfor %}
   </tbody>
 </table>
 
