@@ -2,6 +2,12 @@
     background-color: #ddd;
 }
 
+#tables {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
 table {
     margin-bottom: 2em;
 }

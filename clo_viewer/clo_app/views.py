@@ -14,7 +14,8 @@ def home(request):
 def about(request):
     """Provide more information about the reason for the programs existence and 
     who wrote it."""
-    return HttpResponse("Placeholder")
+    return render(request,
+                  'about.html')
 
 def programs(request):
     """Display a list of degree programs at EvCC and their associated 
@@ -98,3 +99,10 @@ def clo(request, clo_id):
                    "total_classes":total_classes,
                    "clo_courses":courses,
                    "program_pairs":reversed(program_pairs)})
+
+def courses(request):
+    """Return a list of courses and links to their associated pages."""
+    courses = models.Course.objects.all()
+    return render(request,
+                  'courses.html',
+                  {"courses":courses})
